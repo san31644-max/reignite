@@ -1,0 +1,3 @@
+<?php
+// Add new contestant
+?>
