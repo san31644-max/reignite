@@ -1,7 +1,3 @@
-<?php
-require_once '../config/database.php';
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,60 +9,76 @@ require_once '../config/database.php';
 
 <style>
 body {
-    background: #020617;
+    background: radial-gradient(circle at top, #0f172a, #020617);
     color: white;
     font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
 }
 
 /* TITLE */
 h1 {
     text-align: center;
-    color: gold;
+    color: #facc15;
+    font-size: 40px;
+    margin-top: 20px;
 }
 
 /* SECTION */
 .section {
-    margin: 50px 20px;
+    margin: 60px 20px;
 }
 
-/* PODIUM */
+/* CATEGORY TITLE */
+.title {
+    text-align: center;
+    color: #38bdf8;
+    font-size: 30px;
+    margin-bottom: 20px;
+}
+
+/* 🏆 PODIUM */
 .podium {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 20px;
-    margin: 40px 0;
+    gap: 30px;
+    margin: 50px 0;
 }
 
 .podium div {
     text-align: center;
-}
-
-.first {
-    height: 200px;
-}
-.second {
-    height: 150px;
-}
-.third {
-    height: 120px;
+    transition: 0.4s;
 }
 
 .podium img {
-    width: 120px;
-    height: 120px;
+    width: 130px;
+    height: 130px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid gold;
+}
+
+/* WINNER SPECIAL */
+.first img {
+    width: 150px;
+    height: 150px;
+    border: 4px solid gold;
+    box-shadow: 0 0 30px gold;
+}
+
+.second img {
+    border: 3px solid silver;
+}
+
+.third img {
+    border: 3px solid #cd7f32;
 }
 
 .box {
-    background: linear-gradient(45deg, #facc15, #f97316);
-    border-radius: 10px;
-    padding: 10px;
     margin-top: 10px;
-    color: black;
-    font-weight: bold;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
 }
 
 /* LIST */
@@ -76,25 +88,39 @@ h1 {
     align-items: center;
 }
 
+/* CARD */
 .card {
-    width: 80%;
+    width: 85%;
     background: rgba(255,255,255,0.05);
-    margin: 8px;
-    padding: 12px;
-    border-radius: 12px;
+    margin: 10px;
+    padding: 15px;
+    border-radius: 15px;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 15px rgba(250,204,21,0.3);
 }
 
 .rank {
-    color: gold;
+    color: #facc15;
+    font-weight: bold;
 }
 
-/* CATEGORY TITLE */
-.title {
-    text-align: center;
-    color: #38bdf8;
-    font-size: 28px;
+/* MOBILE */
+@media(max-width: 768px){
+    .podium {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .card {
+        width: 95%;
+    }
 }
 </style>
 </head>
@@ -136,33 +162,42 @@ while ($row = $result->fetch_assoc()) {
 
 <div class="title"><?php echo $title; ?></div>
 
-<!-- PODIUM -->
+<!-- 🏆 PODIUM -->
 <div class="podium">
 
 <?php if(isset($top[1])): ?>
 <div class="second">
 <img src="../uploads/<?php echo $top[1]['photo']; ?>">
-<div class="box">🥈 <?php echo $top[1]['name']; ?><br><?php echo $top[1]['votes']; ?> votes</div>
+<div class="box">
+🥈 <?php echo $top[1]['name']; ?><br>
+<?php echo $top[1]['votes']; ?> votes
+</div>
 </div>
 <?php endif; ?>
 
 <?php if(isset($top[0])): ?>
 <div class="first">
 <img src="../uploads/<?php echo $top[0]['photo']; ?>">
-<div class="box">🥇 <?php echo $top[0]['name']; ?><br><?php echo $top[0]['votes']; ?> votes</div>
+<div class="box">
+🥇 <?php echo $top[0]['name']; ?><br>
+<strong><?php echo $top[0]['votes']; ?> votes</strong>
+</div>
 </div>
 <?php endif; ?>
 
 <?php if(isset($top[2])): ?>
 <div class="third">
 <img src="../uploads/<?php echo $top[2]['photo']; ?>">
-<div class="box">🥉 <?php echo $top[2]['name']; ?><br><?php echo $top[2]['votes']; ?> votes</div>
+<div class="box">
+🥉 <?php echo $top[2]['name']; ?><br>
+<?php echo $top[2]['votes']; ?> votes
+</div>
 </div>
 <?php endif; ?>
 
 </div>
 
-<!-- OTHER CONTESTANTS -->
+<!-- 📊 OTHER CONTESTANTS -->
 <div class="list">
 
 <?php
