@@ -27,6 +27,7 @@ body {
 header {
     display:flex;
     justify-content:space-between;
+    align-items:center;
     padding:20px 50px;
     background:rgba(0,0,0,0.6);
     backdrop-filter:blur(10px);
@@ -35,15 +36,21 @@ header {
     z-index:100;
 }
 
-header h1 {color:#facc15;}
+header h1 {color:#facc15; font-size:22px;}
+
+header div {
+    display:flex;
+    align-items:center;
+}
 
 header a {
     color:white;
     margin-left:20px;
     text-decoration:none;
+    font-size:14px;
 }
 
-/* 🎬 HERO WITH VIDEO */
+/* HERO */
 .hero {
     position:relative;
     height:100vh;
@@ -51,6 +58,7 @@ header a {
     justify-content:center;
     align-items:center;
     overflow:hidden;
+    padding:20px;
 }
 
 /* VIDEO */
@@ -64,13 +72,10 @@ header a {
     z-index:-2;
 }
 
-/* DARK OVERLAY */
+/* OVERLAY */
 .video-overlay {
     position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    inset:0;
     background:rgba(0,0,0,0.7);
     z-index:-1;
 }
@@ -162,6 +167,107 @@ footer {
     padding:20px;
     background:black;
 }
+
+/* =========================
+   RESPONSIVE DESIGN
+========================= */
+
+/* Tablets */
+@media (max-width: 992px) {
+
+    header {
+        padding:15px 25px;
+    }
+
+    .hero {
+        height:auto;
+        min-height:100vh;
+    }
+
+    .dual-box {
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .box-card {
+        width:90%;
+        max-width:400px;
+        height:380px;
+    }
+
+    .card {
+        width:45%;
+    }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+
+    header {
+        flex-direction:column;
+        gap:10px;
+        padding:15px;
+    }
+
+    header h1 {
+        font-size:18px;
+    }
+
+    header div {
+        gap:15px;
+    }
+
+    header a {
+        margin:0;
+        font-size:13px;
+    }
+
+    .hero {
+        padding-top:120px;
+    }
+
+    .box-card {
+        width:95%;
+        height:320px;
+    }
+
+    .overlay h3 {
+        font-size:18px;
+    }
+
+    .overlay p {
+        font-size:13px;
+    }
+
+    .card {
+        width:90%;
+    }
+
+    .card img {
+        height:220px;
+    }
+
+    .section {
+        padding:60px 15px;
+    }
+}
+
+/* Small phones */
+@media (max-width: 400px) {
+
+    .box-card {
+        height:280px;
+    }
+
+    .overlay h3 {
+        font-size:16px;
+    }
+
+    .btn {
+        padding:8px 16px;
+        font-size:12px;
+    }
+}
 </style>
 </head>
 
@@ -176,15 +282,15 @@ footer {
     </div>
 </header>
 
-<!-- HERO WITH VIDEO -->
+<!-- HERO -->
 <section class="hero">
 
-    <!-- 🎬 BACKGROUND VIDEO -->
+    <!-- VIDEO -->
     <video autoplay muted loop playsinline class="bg-video">
         <source src="assets/videos/bg.mp4" type="video/mp4">
     </video>
 
-    <!-- DARK OVERLAY -->
+    <!-- OVERLAY -->
     <div class="video-overlay"></div>
 
     <!-- BOXES -->
