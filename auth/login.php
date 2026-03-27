@@ -11,34 +11,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (!empty($email) && !empty($password)) {
 
+        // ======================
+        // CHECK VOTERS (users)
+        // ======================
         $stmt = $conn->prepare("SELECT * FROM users WHERE email=?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
 
         if ($result->num_rows > 0) {
-
             $user = $result->fetch_assoc();
 
             if (password_verify($password, $user['password'])) {
 
-                // LOGIN SUCCESS
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
+                $_SESSION['role'] = "voter";
 
                 header("Location: ../user/dashboard.php");
                 exit();
-
-            } else {
-                $message = "❌ Incorrect password!";
             }
-
-        } else {
-            $message = "❌ Email not registered!";
         }
 
+        // ======================
+        // CHECK CONTESTANTS
+        // ======================
+        $stmt = $conn->prepare("SELECT * FROM contestants WHERE email=?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $contestant = $result->fetch_assoc();
+
+            if (password_verify($password, $contestant['password'])) {
+
+                $_SESSION['contestant_id'] = $contestant['id'];
+                $_SESSION['contestant_name'] = $contestant['name'];
+                $_SESSION['role'] = "contestant";
+
+                header("Location: ../contestant/dashboard.php");
+                exit();
+            }
+        }
+
+        $message = "❌ Invalid email or password!";
+
     } else {
-        $message = "❌ Fill all fields!";
+        $message = "❌ Please fill all fields!";
     }
 }
 ?>
@@ -65,12 +85,12 @@ body {
 
 /* BOX */
 .login-box {
-    width: 360px;
+    width: 380px;
     padding: 30px;
     border-radius: 20px;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(15px);
-    box-shadow: 0 0 25px rgba(250,204,21,0.2);
+    box-shadow: 0 0 30px rgba(250,204,21,0.3);
     animation: fadeIn 1s ease;
 }
 
@@ -85,15 +105,17 @@ input {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
     outline: none;
+    background: rgba(255,255,255,0.1);
+    color: white;
 }
 
 /* BUTTON */
 button {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: none;
     border-radius: 30px;
     background: linear-gradient(45deg, #facc15, #f97316);
@@ -104,12 +126,14 @@ button {
 
 button:hover {
     transform: scale(1.05);
+    box-shadow: 0 0 20px #facc15;
 }
 
 /* MESSAGE */
 .message {
     text-align: center;
     margin-bottom: 10px;
+    color: #f87171;
 }
 
 /* LINK */
@@ -117,7 +141,6 @@ button:hover {
     text-align: center;
     margin-top: 15px;
 }
-
 .link a {
     color: #38bdf8;
     text-decoration: none;
@@ -134,9 +157,11 @@ button:hover {
 <body>
 
 <div class="login-box">
-    <h2>🔐 Voter Login</h2>
+    <h2>🔐 Login</h2>
 
-    <div class="message"><?php echo $message; ?></div>
+    <?php if(!empty($message)): ?>
+        <div class="message"><?php echo $message; ?></div>
+    <?php endif; ?>
 
     <form method="POST">
 
@@ -149,7 +174,7 @@ button:hover {
     </form>
 
     <div class="link">
-        <p>Don't have an account? <a href="register.php">Register</a></p>
+        <p>No account? <a href="register.php">Register</a></p>
     </div>
 </div>
 

@@ -1,3 +1,8 @@
+<?php
+session_start();
+require_once '../config/database.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,80 +10,62 @@
 <title>🏆 Results - Reignite</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
-
 <style>
 body {
-    background: radial-gradient(circle at top, #0f172a, #020617);
+    background: #020617;
     color: white;
-    font-family: 'Poppins', sans-serif;
-    overflow-x: hidden;
+    font-family: Arial, sans-serif;
 }
 
-/* TITLE */
 h1 {
     text-align: center;
-    color: #facc15;
-    font-size: 40px;
-    margin-top: 20px;
+    color: gold;
 }
 
 /* SECTION */
 .section {
-    margin: 60px 20px;
+    margin: 40px 20px;
 }
 
-/* CATEGORY TITLE */
+/* TITLE */
 .title {
     text-align: center;
+    font-size: 28px;
     color: #38bdf8;
-    font-size: 30px;
-    margin-bottom: 20px;
 }
 
-/* 🏆 PODIUM */
+/* PODIUM */
 .podium {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 30px;
-    margin: 50px 0;
+    gap: 20px;
+    margin: 30px 0;
 }
 
 .podium div {
     text-align: center;
-    transition: 0.4s;
 }
+
+.first { height: 200px; }
+.second { height: 150px; }
+.third { height: 120px; }
 
 .podium img {
-    width: 130px;
-    height: 130px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
-}
-
-/* WINNER SPECIAL */
-.first img {
-    width: 150px;
-    height: 150px;
-    border: 4px solid gold;
-    box-shadow: 0 0 30px gold;
-}
-
-.second img {
-    border: 3px solid silver;
-}
-
-.third img {
-    border: 3px solid #cd7f32;
+    border: 3px solid gold;
 }
 
 .box {
-    margin-top: 10px;
+    background: gold;
+    color: black;
     padding: 10px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    margin-top: 10px;
+    font-weight: bold;
 }
 
 /* LIST */
@@ -88,39 +75,14 @@ h1 {
     align-items: center;
 }
 
-/* CARD */
 .card {
-    width: 85%;
-    background: rgba(255,255,255,0.05);
-    margin: 10px;
-    padding: 15px;
-    border-radius: 15px;
+    width: 80%;
+    background: #111;
+    margin: 8px;
+    padding: 12px;
+    border-radius: 10px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    transition: 0.3s;
-}
-
-.card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 15px rgba(250,204,21,0.3);
-}
-
-.rank {
-    color: #facc15;
-    font-weight: bold;
-}
-
-/* MOBILE */
-@media(max-width: 768px){
-    .podium {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .card {
-        width: 95%;
-    }
 }
 </style>
 </head>
@@ -131,20 +93,24 @@ h1 {
 
 <?php
 function getResults($conn, $category) {
-    $query = "
-    SELECT c.*, COUNT(v.id) AS votes
+    $sql = "
+    SELECT c.id, c.name, c.photo, COUNT(v.id) as votes
     FROM contestants c
     LEFT JOIN votes v ON c.id = v.contestant_id
     WHERE c.category='$category' AND c.approved=1
     GROUP BY c.id
     ORDER BY votes DESC
     ";
-    return $conn->query($query);
+    return $conn->query($sql);
 }
 
-$categories = ['MR' => '👑 Mr Category', 'MRS' => '👑 Mrs Category'];
+$categories = [
+    'MR' => '👑 Mr Category',
+    'MRS' => '👑 Mrs Category'
+];
 
-foreach ($categories as $key => $title):
+foreach ($categories as $key => $label):
+
 $result = getResults($conn, $key);
 
 $top = [];
@@ -152,52 +118,46 @@ $others = [];
 $count = 0;
 
 while ($row = $result->fetch_assoc()) {
-    if ($count < 3) $top[] = $row;
-    else $others[] = $row;
+    if ($count < 3) {
+        $top[] = $row;
+    } else {
+        $others[] = $row;
+    }
     $count++;
 }
 ?>
 
 <div class="section">
 
-<div class="title"><?php echo $title; ?></div>
+<div class="title"><?php echo $label; ?></div>
 
-<!-- 🏆 PODIUM -->
+<!-- PODIUM -->
 <div class="podium">
 
 <?php if(isset($top[1])): ?>
 <div class="second">
 <img src="../uploads/<?php echo $top[1]['photo']; ?>">
-<div class="box">
-🥈 <?php echo $top[1]['name']; ?><br>
-<?php echo $top[1]['votes']; ?> votes
-</div>
+<div class="box">🥈 <?php echo $top[1]['name']; ?><br><?php echo $top[1]['votes']; ?> votes</div>
 </div>
 <?php endif; ?>
 
 <?php if(isset($top[0])): ?>
 <div class="first">
 <img src="../uploads/<?php echo $top[0]['photo']; ?>">
-<div class="box">
-🥇 <?php echo $top[0]['name']; ?><br>
-<strong><?php echo $top[0]['votes']; ?> votes</strong>
-</div>
+<div class="box">🥇 <?php echo $top[0]['name']; ?><br><?php echo $top[0]['votes']; ?> votes</div>
 </div>
 <?php endif; ?>
 
 <?php if(isset($top[2])): ?>
 <div class="third">
 <img src="../uploads/<?php echo $top[2]['photo']; ?>">
-<div class="box">
-🥉 <?php echo $top[2]['name']; ?><br>
-<?php echo $top[2]['votes']; ?> votes
-</div>
+<div class="box">🥉 <?php echo $top[2]['name']; ?><br><?php echo $top[2]['votes']; ?> votes</div>
 </div>
 <?php endif; ?>
 
 </div>
 
-<!-- 📊 OTHER CONTESTANTS -->
+<!-- OTHER CONTESTANTS -->
 <div class="list">
 
 <?php
@@ -206,7 +166,7 @@ foreach ($others as $row):
 ?>
 
 <div class="card">
-<div class="rank">#<?php echo $rank++; ?></div>
+<div>#<?php echo $rank++; ?></div>
 <div><?php echo $row['name']; ?></div>
 <div><?php echo $row['votes']; ?> votes</div>
 </div>

@@ -1,7 +1,8 @@
 <?php
+session_start();
 require_once '../config/database.php';
 
-$message = ""; // ✅ Fix warning
+$message = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -10,36 +11,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $phone = $_POST['phone'];
     $category = $_POST['category'];
     $bio = $_POST['bio'];
+    $password = $_POST['password'];
 
-    $imageName = $_FILES['photo']['name'];
-    $tmpName = $_FILES['photo']['tmp_name'];
-    $folder = "../uploads/";
+    if (!empty($name) && !empty($email) && !empty($password)) {
 
-    if (!empty($imageName)) {
+        $check = $conn->prepare("SELECT id FROM contestants WHERE email=?");
+        $check->bind_param("s", $email);
+        $check->execute();
+        $check->store_result();
 
-        $ext = strtolower(pathinfo($imageName, PATHINFO_EXTENSION));
-        $allowed = ['jpg','jpeg','png'];
-
-        if (in_array($ext, $allowed)) {
-
-            $newName = time() . "_" . rand(1000,9999) . "." . $ext;
-            move_uploaded_file($tmpName, $folder.$newName);
-
-            $stmt = $conn->prepare("INSERT INTO contestants (name,email,phone,category,photo,bio,approved) VALUES (?,?,?,?,?,?,1)");
-            $stmt->bind_param("ssssss",$name,$email,$phone,$category,$newName,$bio);
-
-            if ($stmt->execute()) {
-                $message = "✅ Registered successfully!";
-            } else {
-                $message = "❌ Error saving data!";
-            }
-
+        if ($check->num_rows > 0) {
+            $message = "❌ Email already exists!";
         } else {
-            $message = "❌ Only JPG, JPEG, PNG allowed!";
-        }
 
-    } else {
-        $message = "❌ Please upload an image!";
+            $hashed = password_hash($password, PASSWORD_DEFAULT);
+
+            $img = $_FILES['photo']['name'];
+            $tmp = $_FILES['photo']['tmp_name'];
+
+            if ($img) {
+                $newName = time() . "_" . rand(1000,9999) . ".jpg";
+                move_uploaded_file($tmp, "../uploads/" . $newName);
+
+                $stmt = $conn->prepare("INSERT INTO contestants (name,email,phone,category,photo,bio,password,approved) VALUES (?,?,?,?,?,?,?,1)");
+                $stmt->bind_param("sssssss",$name,$email,$phone,$category,$newName,$bio,$hashed);
+
+                if ($stmt->execute()) {
+
+                    $id = $stmt->insert_id;
+                    $code = "RCC" . str_pad($id,3,"0",STR_PAD_LEFT);
+                    $conn->query("UPDATE contestants SET contestant_code='$code' WHERE id=$id");
+
+                    $_SESSION['contestant_id'] = $id;
+
+                    header("Location: dashboard.php");
+                    exit();
+                }
+            }
+        }
     }
 }
 ?>
@@ -47,138 +56,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html>
 <head>
-<title>Register Contestant</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
-
+<title>Register</title>
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+body{
+    background:linear-gradient(135deg,#020617,#0f172a);
+    color:white;
+    font-family:Poppins;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
 }
-
-body {
-    font-family: 'Poppins', sans-serif;
-    background: radial-gradient(circle at top, #0f172a, #020617);
-    color: white;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.box{
+    background:rgba(255,255,255,0.05);
+    padding:30px;
+    border-radius:15px;
+    width:350px;
 }
-
-/* FORM */
-.container {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(20px);
-    padding: 40px;
-    border-radius: 20px;
-    width: 360px;
-    text-align: center;
-    box-shadow: 0 0 40px rgba(250,204,21,0.2);
-    animation: fadeIn 1s ease;
+input,select,textarea{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border:none;
+    border-radius:8px;
 }
-
-h2 {
-    color: #facc15;
-    margin-bottom: 10px;
-}
-
-.message {
-    font-size: 14px;
-    margin-bottom: 10px;
-}
-
-/* INPUTS */
-input, select, textarea {
-    width: 100%;
-    margin: 10px 0;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-    background: rgba(255,255,255,0.08);
-    color: white;
-}
-
-input:focus, select:focus, textarea:focus {
-    box-shadow: 0 0 10px #38bdf8;
-}
-
-/* FILE */
-.file-box {
-    border: 2px dashed rgba(255,255,255,0.3);
-    padding: 15px;
-    border-radius: 10px;
-    cursor: pointer;
-    margin: 10px 0;
-}
-
-.file-box:hover {
-    border-color: #facc15;
-}
-
-.file-box input {
-    display: none;
-}
-
-/* BUTTON */
-button {
-    width: 100%;
-    padding: 12px;
-    border-radius: 25px;
-    border: none;
-    background: linear-gradient(45deg, #facc15, #f97316);
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-button:hover {
-    transform: scale(1.05);
-}
-
-/* ANIMATION */
-@keyframes fadeIn {
-    from {opacity:0; transform:translateY(20px);}
-    to {opacity:1; transform:translateY(0);}
+button{
+    width:100%;
+    padding:12px;
+    background:gold;
+    border:none;
+    border-radius:20px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h2>🔥 Join Reignite</h2>
-
-<p class="message"><?php echo $message ?? ''; ?></p>
+<div class="box">
+<h2>🧑‍🎤 Register</h2>
+<p><?php echo $message; ?></p>
 
 <form method="POST" enctype="multipart/form-data">
-
 <input name="name" placeholder="Full Name" required>
-<input name="email" type="email" placeholder="Email Address" required>
-<input type="password" name="password" placeholder="Password" required>
-<input name="phone" placeholder="WhatsApp Number" required>
-
-<select name="category" required>
-<option value="">Select Category</option>
+<input name="email" placeholder="Email" required>
+<input name="phone" placeholder="Phone">
+<select name="category">
 <option value="MR">Mr</option>
 <option value="MRS">Mrs</option>
 </select>
-
-<textarea name="bio" placeholder="Tell about yourself..."></textarea>
-
-<label class="file-box">
-📸 Upload Your Photo
+<textarea name="bio" placeholder="Bio"></textarea>
+<input type="password" name="password" placeholder="Password" required>
 <input type="file" name="photo" required>
-</label>
-
-<button>🚀 Register Now</button>
-
+<button>Register</button>
 </form>
-
 </div>
 
 </body>
