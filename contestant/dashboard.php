@@ -12,44 +12,73 @@ $msg = "";
 
 // ================= UPDATE PROFILE =================
 if (isset($_POST['update'])) {
+
     $name = $_POST['name'];
     $phone = $_POST['phone'];
     $bio = $_POST['bio'];
 
+    // IMAGE UPLOAD
     if (!empty($_FILES['photo']['name'])) {
-        $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
-        $newName = time() . "." . $ext;
-        move_uploaded_file($_FILES['photo']['tmp_name'], "../uploads/" . $newName);
 
-        $conn->query("UPDATE contestants SET photo='$newName' WHERE id=$id");
+        $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
+        $newName = time() . "_" . rand(1000,9999) . "." . $ext;
+
+        $uploadPath = __DIR__ . "/../uploads/" . $newName;
+
+        if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadPath)) {
+
+            $stmt = $conn->prepare("UPDATE contestants SET photo=? WHERE id=?");
+            $stmt->bind_param("si", $newName, $id);
+            $stmt->execute();
+        }
     }
 
-    $conn->query("UPDATE contestants SET name='$name', phone='$phone', bio='$bio' WHERE id=$id");
+    $stmt = $conn->prepare("UPDATE contestants SET name=?, phone=?, bio=? WHERE id=?");
+    $stmt->bind_param("sssi", $name, $phone, $bio, $id);
+    $stmt->execute();
+
     $msg = "✅ Profile Updated!";
 }
 
 // ================= CHANGE PASSWORD =================
 if (isset($_POST['pass'])) {
-    $p = password_hash($_POST['newpass'], PASSWORD_DEFAULT);
-    $conn->query("UPDATE contestants SET password='$p' WHERE id=$id");
-    $msg = "🔐 Password Changed!";
+
+    if (!empty($_POST['newpass'])) {
+        $p = password_hash($_POST['newpass'], PASSWORD_DEFAULT);
+
+        $stmt = $conn->prepare("UPDATE contestants SET password=? WHERE id=?");
+        $stmt->bind_param("si", $p, $id);
+        $stmt->execute();
+
+        $msg = "🔐 Password Changed!";
+    }
 }
 
 // ================= DELETE ACCOUNT =================
 if (isset($_POST['delete'])) {
-    $conn->query("DELETE FROM contestants WHERE id=$id");
+
+    $stmt = $conn->prepare("DELETE FROM contestants WHERE id=?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
     session_destroy();
     header("Location: ../index.php");
     exit();
 }
 
 // ================= FETCH USER =================
-$user = $conn->query("SELECT * FROM contestants WHERE id=$id")->fetch_assoc();
+$stmt = $conn->prepare("SELECT * FROM contestants WHERE id=?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
 
 // ================= VOTES =================
-$votes = $conn->query("SELECT COUNT(*) as c FROM votes WHERE contestant_id=$id")->fetch_assoc()['c'];
+$stmt = $conn->prepare("SELECT COUNT(*) as c FROM votes WHERE contestant_id=?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$votes = $stmt->get_result()->fetch_assoc()['c'];
 
-// ================= RANK (FIXED QUERY) =================
+// ================= RANK =================
 $q = $conn->query("
 SELECT c.id, COUNT(v.id) as v
 FROM contestants c
@@ -79,7 +108,6 @@ body {
     text-align: center;
 }
 
-/* LAYOUT */
 .container {
     display: flex;
     flex-wrap: wrap;
@@ -87,7 +115,6 @@ body {
     gap: 20px;
 }
 
-/* CARD */
 .card {
     background: rgba(255,255,255,0.05);
     padding: 20px;
@@ -97,7 +124,6 @@ body {
     box-shadow: 0 0 20px rgba(250,204,21,0.2);
 }
 
-/* IMAGE */
 img {
     width: 120px;
     height: 120px;
@@ -106,7 +132,6 @@ img {
     border: 3px solid gold;
 }
 
-/* INPUTS */
 input, textarea {
     width: 90%;
     padding: 10px;
@@ -115,7 +140,6 @@ input, textarea {
     border: none;
 }
 
-/* BUTTONS */
 button {
     padding: 10px 15px;
     margin: 5px;
@@ -129,7 +153,6 @@ button {
 .blue { background: #38bdf8; }
 .red { background: red; color: white; }
 
-/* MESSAGE */
 .msg {
     color: lightgreen;
     margin-bottom: 10px;
@@ -140,14 +163,14 @@ button {
 <body>
 
 <h1>🎓 Contestant Dashboard</h1>
-
 <p class="msg"><?php echo $msg; ?></p>
 
 <div class="container">
 
 <!-- PROFILE -->
 <div class="card">
-<img src="../uploads/<?php echo $user['photo']; ?>">
+
+<img src="/uploads/<?php echo $user['photo']; ?>">
 
 <h3><?php echo $user['name']; ?></h3>
 
@@ -155,6 +178,7 @@ button {
 <p>📊 Votes: <b><?php echo $votes; ?></b></p>
 <p>🏆 Rank: <b>#<?php echo $rank; ?></b></p>
 <p>Category: <?php echo $user['category']; ?></p>
+
 </div>
 
 <!-- EDIT -->
